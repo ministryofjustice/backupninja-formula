@@ -2,11 +2,28 @@
     'Debian': {
         'backup_base_dir': '/var/backups',
         'duplicity': {
+          'enabled': True,
           'password': 'override_this_password',
           'override_desturl': '',
           's3bucket': '',
           'awsaccesskeyid': '',
           'awssecretaccesskeyid': ''
+          'includes': [
+            '/var/spool/cron/crontabs',
+            '/var/backups',
+            '/etc',
+            '/root',
+            '/var/lib/dpkg/status*',
+            '/var/log',
+            '/data',
+          ],
+          'excludes': []
+          'hourly': {
+            'enabled': False,
+            'override_desturl': ''
+            'includes': [],
+            'excludes': []
+          }
         }
     },
     'default': 'Debian',

@@ -63,6 +63,7 @@ backupninja:
 /etc/backup.d:
   file:
     - directory
+    - clean: True
     - user: root
     - group: root
     - mode: 770
@@ -78,6 +79,7 @@ backupninja:
     - group: root
     - mode: 600
 
+{% if backupninja.duplicity.hourly.enabled %}
 /etc/backup.d/90.dup:
   file:
     - managed
@@ -86,7 +88,20 @@ backupninja:
     - user: root
     - group: root
     - mode: 600
+{% endif %}
 
+{% if backupninja.duplicity.enabled %}
+/etc/backup.d/90.dup:
+  file:
+    - managed
+    - source: salt://backupninja/templates/backup.d/90.dup
+    - template: jinja
+    - user: root
+    - group: root
+    - mode: 600
+{% endif %}
+
+{% if backupninja.duplicity.enabled %}
 # .boto file, to aide command-line use of duplicity for
 # recovery/inspection.
 /root/.boto:
@@ -114,6 +129,7 @@ backupninja:
     - user: root
     - group: adm
     - mode: 440
+{% endif %}
 
 {{backupninja.backup_base_dir}}:
   file:
