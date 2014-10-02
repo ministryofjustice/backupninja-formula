@@ -1,0 +1,16 @@
+{% from "backupninja/map.jinja" import backupninja with context %}
+packages = yes
+partitions = yes
+dosfdisk = yes
+hardware = yes
+luksheaders = no
+lvm = yes
+
+packagesfile = {{backupninja.backup_base_dir}}/sys/dpkg-selections.txt
+selectionsfile = {{backupninja.backup_base_dir}}/sys/debconfsel.txt
+partitionsfile = {{backupninja.backup_base_dir}}/sys/partitions.__star__.txt
+hardwarefile = {{backupninja.backup_base_dir}}/sys/hardware.txt
+
+# If vservers = yes in /etc/backupninja.conf then the following variables can
+# be used:
+# vsnames = all | <vserver1> <vserver2> ... (default = all)

@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ -r /usr/local/etc/duplicity_helper.conf ]; then
+  . /usr/local/etc/duplicity_helper.conf
+fi
+
+duplicity $* $DUPLICITY_EXTRA_OPTS $DUPLICITY_BACKEND_URL

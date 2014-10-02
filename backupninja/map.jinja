@@ -1,0 +1,14 @@
+{% set backupninja = salt['grains.filter_by']({
+    'Debian': {
+        'backup_base_dir': '/var/backups',
+        'duplicity': {
+          'password': 'override_this_password',
+          'override_desturl': '',
+          's3bucket': '',
+          'awsaccesskeyid': '',
+          'awssecretaccesskeyid': ''
+        }
+    },
+    'default': 'Debian',
+}, merge=salt['pillar.get']('backupninja',{})) %}
+

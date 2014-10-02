@@ -1,0 +1,4 @@
+{% from "backupninja/map.jinja" import backupninja with context %}
+[Credentials]
+aws_access_key_id = {{backupninja.duplicity.awsaccesskeyid}}
+aws_secret_access_key = {{backupninja.duplicity.awssecretaccesskeyid}}

@@ -1,0 +1,8 @@
+backupninja:
+  backup_base_dir: '/var/backups'
+  duplicity:
+    password: 'override_this_password'
+    override_desturl: ''  # use if you want a custom bucket + directory
+    s3bucket: ''
+    s3accesskeyid: ''
+    s3secretaccesskeyid: ''
