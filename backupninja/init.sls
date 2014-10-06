@@ -80,10 +80,10 @@ backupninja:
     - mode: 600
 
 {% if backupninja.duplicity.hourly.enabled %}
-/etc/backup.d/90.dup:
+/etc/backup.d/80.dup:
   file:
     - managed
-    - source: salt://backupninja/templates/backup.d/90.dup
+    - source: salt://backupninja/templates/backup.d/80.dup
     - template: jinja
     - user: root
     - group: root
