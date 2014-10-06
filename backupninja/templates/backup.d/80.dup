@@ -76,13 +76,13 @@ password = {{backupninja.duplicity.password}}
 #    taken into account.
 
 # files to include in the backup
-{% for include in backupninja.hourly.includes %}
+{% for include in backupninja.duplicity.hourly.includes %}
 include = {{ include }}
 {% endfor %}
 
 # files to exclude from the backup
 exclude = /var/cache/backupninja/duplicity
-{% for exclude in backupninja.hourly.excludes %}
+{% for exclude in backupninja.duplicity.hourly.excludes %}
 exclude = {{ exclude }}
 {% endfor %}
 
