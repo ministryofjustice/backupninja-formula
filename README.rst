@@ -32,10 +32,10 @@ then another helper 'duplicity_hourly_helper' is also installed.
 The duplicity helpers are present to simplify the listing and recovering of
 files in the remote backup store.
 
-*** It is important to ensure that the files backed up by the hourly backup are
+** It is important to ensure that the files backed up by the hourly backup are
 also backed up by the daily backup set. The hourly backup has a shorter
 retention period, so longer term recovery is only possible from the daily
-set ***
+set **
 
 Default Backup Sets
 ---------
