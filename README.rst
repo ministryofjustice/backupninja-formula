@@ -92,9 +92,9 @@ To list the files available in a backup set, do::
 This will, after syncronising a local cache of metadata, list all the files
 backed up in that set.
 
-To see available backup sets (daily, in this instance), do::
+To see available backup sets (hourly, in this instance), do::
 
-    $ duplicity_daily_helper sets
+    $ duplicity_hourly_helper sets
     [stuff about syncing metadata]
     Last full backup date: Wed Oct  8 11:00:05 2014
     [snip]
