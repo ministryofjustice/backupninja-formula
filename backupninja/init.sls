@@ -101,6 +101,7 @@ backupninja:
     - mode: 600
 {% endif %}
 
+
 {% if backupninja.duplicity.enabled %}
 # .boto file, to aide command-line use of duplicity for
 # recovery/inspection.
@@ -115,20 +116,48 @@ backupninja:
 
 /usr/local/bin/duplicity_helper:
   file:
+    - absent
+
+/usr/local/etc/duplicity_helper.conf:
+  file:
+    - absent
+
+/usr/local/bin/duplicity_daily_helper:
+  file:
     - managed
     - source: salt://backupninja/files/duplicity_helper
     - user: root
     - group: root
     - mode: 0555
 
-/usr/local/etc/duplicity_helper.conf:
+/usr/local/etc/duplicity_daily_helper.conf:
   file:
     - managed
-    - source: salt://backupninja/templates/duplicity_helper.conf
+    - source: salt://backupninja/templates/duplicity_daily_helper.conf
     - template: jinja
     - user: root
     - group: adm
     - mode: 440
+
+{% if backupninja.duplicity.hourly.enabled %}
+/usr/local/bin/duplicity_hourly_helper:
+  file:
+    - managed
+    - source: salt://backupninja/files/duplicity_helper
+    - user: root
+    - group: root
+    - mode: 0555
+
+/usr/local/etc/duplicity_hourly_helper.conf:
+  file:
+    - managed
+    - source: salt://backupninja/templates/duplicity_hourly_helper.conf
+    - template: jinja
+    - user: root
+    - group: adm
+    - mode: 440
+
+{% endif %}
 {% endif %}
 
 {{backupninja.backup_base_dir}}:

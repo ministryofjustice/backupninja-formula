@@ -107,9 +107,7 @@ incremental = yes
 # how many days of data to keep ; default is 60 days.
 # (you can also use the time format of duplicity)
 # 'keep = yes' means : do not delete old data, the remote host will take care of this
-#keep = 60
-#keep = 1Y
-#keep = yes
+keep = {{backupninja.duplicity.hourly.keep}}
 
 # for how many full backups do we keep their later increments ;
 # default is all (keep all increments).

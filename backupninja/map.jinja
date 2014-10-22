@@ -3,6 +3,7 @@
         'backup_base_dir': '/var/backups',
         'duplicity': {
           'enabled': True,
+          'keep': '60',
           'password': 'override_this_password',
           'override_desturl': '',
           's3bucket': '',
@@ -19,6 +20,7 @@
           ],
           'excludes': [],
           'hourly': {
+            'keep': '5',
             'enabled': False,
             'override_desturl': '',
             'includes': [],
