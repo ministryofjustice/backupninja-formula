@@ -1,3 +1,10 @@
+0.3.0
+-----
+
+* Reduce default retention of hourly backups.
+* Make retentions overridable via pillar data
+* Improve recovery/helper documentation
+
 0.2.0
 -----
 
