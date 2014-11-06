@@ -137,7 +137,6 @@ awssecretaccesskey = {{backupninja.duplicity.awssecretaccesskeyid}}
 # if using 'desturl' above, 'bandwidthlimit' must not be set
 # an example setting of 128 Kbit/s would be:
 #bandwidthlimit = 128
-bandwidthlimit =
 
 {% if backupninja.duplicity.hourly.override_desturl %}
 desturl = {{backupninja.duplicity.hourly.override_desturl}}
