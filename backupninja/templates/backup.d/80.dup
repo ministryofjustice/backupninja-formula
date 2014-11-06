@@ -84,9 +84,7 @@ incremental = yes
 # default is 30 days (one can also use the time format of duplicity).
 # if increments = keep, never automatically perform a new full backup ;
 # only perform incremental backups.
-#increments = 30
-#increments = keep
-#increments = yes
+increments = {{backupninja.duplicity.hourly.increments}}
 
 # how many days of data to keep ; default is 60 days.
 # (you can also use the time format of duplicity)
@@ -97,9 +95,7 @@ keep = {{backupninja.duplicity.hourly.keep}}
 # default is all (keep all increments).
 # increments for older full backups will be deleted : only the more
 # recent ones (count provided) will be kept
-#keepincroffulls = all
-#keepincroffulls = 6
-keepincroffulls = 30
+keepincroffulls = all
 
 # Amazon Web Services Access Key ID and Secret Access Key, needed for backups
 # to S3 buckets.
