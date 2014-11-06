@@ -59,22 +59,6 @@ password = {{backupninja.duplicity.password}}
 
 [source]
 
-# A few notes about includes and excludes:
-# 1. include, exclude and vsinclude statements support globbing with '*'
-# 2. Symlinks are not dereferenced. Moreover, an include line whose path
-#    contains, at any level, a symlink to a directory, will only have the
-#    symlink backed-up, not the target directory's content. Yes, you have to
-#    dereference yourself the symlinks, or to use 'mount --bind' instead.
-#    Example: let's say /home is a symlink to /mnt/crypt/home ; the following
-#    line will only backup a "/home" symlink ; neither /home/user nor
-#    /home/user/Mail will be backed-up :
-#      include = /home/user/Mail
-#    A workaround is to 'mount --bind /mnt/crypt/home /home' ; another one is to
-#    write :
-#      include = /mnt/crypt/home/user/Mail
-# 3. All the excludes come after all the includes. The order is not otherwise
-#    taken into account.
-
 # files to include in the backup
 {% for include in backupninja.duplicity.hourly.includes %}
 include = {{ include }}
@@ -117,26 +101,10 @@ keep = {{backupninja.duplicity.hourly.keep}}
 #keepincroffulls = 6
 keepincroffulls = 30
 
-# full destination URL, in duplicity format; if set, desturl overrides
-# sshoptions, destdir, desthost and destuser; it also disables testconnect and
-# bandwithlimit. For details, see duplicity manpage, section "URL FORMAT".
-#desturl = file:///usr/local/backup
-#desturl = rsync://user@other.host//var/backup/bla
-#desturl = s3+http://your_bucket
-#desturl = ftp://myftpuser@ftp.example.org/remote/ftp/path
-
 # Amazon Web Services Access Key ID and Secret Access Key, needed for backups
 # to S3 buckets.
 awsaccesskeyid = {{backupninja.duplicity.awsaccesskeyid}}
 awssecretaccesskey = {{backupninja.duplicity.awssecretaccesskeyid}}
-
-# FTP password, needed for backups using desturl = ftp://...
-#ftp_password =
-
-# bandwith limit, in kbit/s ; default is 0, i.e. no limit
-# if using 'desturl' above, 'bandwidthlimit' must not be set
-# an example setting of 128 Kbit/s would be:
-#bandwidthlimit = 128
 
 {% if backupninja.duplicity.hourly.override_desturl %}
 desturl = {{backupninja.duplicity.hourly.override_desturl}}
