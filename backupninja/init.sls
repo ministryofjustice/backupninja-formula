@@ -78,6 +78,9 @@ backupninja:
     - user: root
     - group: root
     - mode: 600
+    - makedirs: True
+    - require_in:
+      - file: /etc/backup.d
 
 {% if backupninja.duplicity.hourly.enabled %}
 /etc/backup.d/80.dup:
@@ -88,6 +91,9 @@ backupninja:
     - user: root
     - group: root
     - mode: 600
+    - makedirs: True
+    - require_in:
+      - file: /etc/backup.d
 {% endif %}
 
 {% if backupninja.duplicity.enabled %}
@@ -99,6 +105,9 @@ backupninja:
     - user: root
     - group: root
     - mode: 600
+    - makedirs: True
+    - require_in:
+      - file: /etc/backup.d
 {% endif %}
 
 
