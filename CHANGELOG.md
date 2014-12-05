@@ -1,3 +1,8 @@
+0.3.1
+-----
+
+* Fix to prevent /etc/backup.d cleaning from causing recreate of files within
+
 0.3.0
 -----
 
