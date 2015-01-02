@@ -12,6 +12,7 @@ getconf mongopass
 getconf mongodb
 getconf mongocollection
 getconf vsname
+getconf noprimarybackup
 
 # Decide if the handler should operate on a vserver or on the host.
 # In the former case, check that $vsname exists and is running.
@@ -65,6 +66,15 @@ then
 	COLLECTION="-c $mongocollection"
 fi
 
+if [ -n "$noprimarybackup" -a $noprimarybackup != 'false' ]; then
+  info "only dumping secondary nodes"
+  mystate=$( mongo $AUTH --quiet --eval 'rs.status()["myState"]' admin )
+  info "Got rs.status.mystate: $mystate"
+  if [ -n "$mystate" -a $mystate -eq 1 ]; then
+    info "This node is PRIMARY in replicaSet - not backing up"
+    return 0
+  fi
+fi
 
 if [ $usevserver = yes ]
 then

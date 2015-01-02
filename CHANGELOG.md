@@ -1,3 +1,8 @@
+CURRENT
+-------
+
+* Provide option to prevent mongo backups running on primary node
+
 0.3.1
 -----
 
