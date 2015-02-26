@@ -40,6 +40,26 @@ backupninja:
     - require:
       - pkg: backupninja
 
+/usr/share/backupninja/pgsql:
+  file:
+    - managed
+    - source: salt://backupninja/files/pgsql
+    - user: root
+    - group: root
+    - mode: 644
+    - require:
+      - pkg: backupninja
+
+/usr/share/backupninja/pgsql.helper:
+  file:
+    - managed
+    - source: salt://backupninja/files/pgsql.helper
+    - user: root
+    - group: root
+    - mode: 644
+    - require:
+      - pkg: backupninja
+
 /usr/share/backupninja/mongodb:
   file:
     - managed

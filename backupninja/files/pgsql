@@ -10,8 +10,27 @@ getconf compress yes
 getconf vsname
 # format maps to pg_dump --format= option, old/default was plain
 getconf format plain
+getconf user
+getconf password
+getconf host
+getconf port 5432
 
-localhost=`hostname`
+if [ -n "${host}" ]; then
+  dump_hostname=$host
+  export PGHOST=$host
+  export PGPORT=$port
+else
+  dump_hostname=`hostname`
+fi
+
+if [ -n "${user}" ]; then
+  export PGUSER=$user
+  if [ -n "${password}" ]; then
+    export PGPASSFILE=$(mktemp --suffix='.backupninja-pgsql')
+    echo "*:*:*:${user}:${password}" > $PGPASSFILE
+  fi
+fi
+
 
 # Decide if the handler should operate on a vserver or on the host.
 # In the former case, check that $vsname exists and is running.
@@ -97,8 +116,14 @@ if [ "$databases" = "all" ] && [ "$format" != "plain" ]; then
    if [ "$usevserver" = "yes" ]; then
       	cmdprefix="$VSERVER $vsname exec "
    fi
-   execstr="${cmdprefix} su - $PGSQLUSER -c 'psql -AtU $PGSQLUSER -c \"SELECT datname FROM pg_database WHERE NOT datistemplate\"'"
-   debug execstr
+   if [ -n "${PGHOST}" ]; then
+     execstr="psql -w -At -c \"SELECT datname FROM pg_database WHERE NOT datistemplate\" postgres"
+   elif [ -z "${user}" ]; then
+     execstr="${cmdprefix} su - $PGSQLUSER -c 'psql -AtU $PGSQLUSER -c \"SELECT datname FROM pg_database WHERE NOT datistemplate\"'"
+   else
+     execstr="${cmdprefix} su - $PGSQLUSER -c 'psql -AtU $user -c \"SELECT datname FROM pg_database WHERE NOT datistemplate\"'"
+   fi
+   debug $execstr
    dblist=""
    for db in $(eval $execstr 2>&1); do
       dblist="$dblist $db"
@@ -115,15 +140,23 @@ fi
 if [ "$databases" == "all" ]; then
    if [ $usevserver = yes ]; then
       if [ "$compress" == "yes" ]; then
-         execstr="$VSERVER $vsname exec su - $PGSQLUSER -s /bin/bash -c \"set -o pipefail ; $PGSQLDUMPALL | $GZIP $GZIP_OPTS > '$backupdir/${vsname}.sql.gz'\""
+         execstr="$VSERVER $vsname exec su - $PGSQLUSER -s /bin/bash -c \"set -o pipefail ; $PGSQLDUMPALL -w | $GZIP $GZIP_OPTS > '$backupdir/${vsname}.sql.gz'\""
       else
-         execstr="$VSERVER $vsname exec su - $PGSQLUSER -c \"$PGSQLDUMPALL > '$backupdir/${vsname}.sql'\""
+         execstr="$VSERVER $vsname exec su - $PGSQLUSER -c \"$PGSQLDUMPALL -w > '$backupdir/${vsname}.sql'\""
       fi
    else
       if [ "$compress" == "yes" ]; then
-         execstr="su - $PGSQLUSER -s /bin/bash -c \"set -o pipefail ; $PGSQLDUMPALL | $GZIP $GZIP_OPTS > '$backupdir/${localhost}-all.sql.gz'\""
+         if [ -n "${PGHOST}" ]; then
+           execstr="set -o pipefail ; $PGSQLDUMPALL -w | $GZIP $GZIP_OPTS > '$backupdir/${dump_hostname}-all.sql.gz'"
+         else
+           execstr="su - $PGSQLUSER -s /bin/bash -c \"set -o pipefail ; $PGSQLDUMPALL -w | $GZIP $GZIP_OPTS > '$backupdir/${dump_hostname}-all.sql.gz'\""
+         fi
       else
-         execstr="su - $PGSQLUSER -c \"$PGSQLDUMPALL > '$backupdir/${localhost}-all.sql'\""
+         if [ -n "${PGHOST}" ]; then
+           execstr="$PGSQLDUMPALL -w > '$backupdir/${dump_hostname}-all.sql'"
+         else
+           execstr="su - $PGSQLUSER -c \"$PGSQLDUMPALL -w > '$backupdir/${dump_hostname}-all.sql'\""
+         fi
       fi
    fi
    debug "$execstr"
@@ -147,11 +180,13 @@ else
    if [ "$dumpglobals" = "yes" ]; then
       globalscmd=""
       if [ "$compress" == "yes" ]; then
-         globalscmd="set -o pipefail ; $PGSQLDUMPALL -g | $GZIP $GZIP_OPTS > '$backupdir/globals.sql.gz'"
+         globalscmd="set -o pipefail ; $PGSQLDUMPALL -w -g | $GZIP $GZIP_OPTS > '$backupdir/globals.sql.gz'"
       else
-         globalscmd="$PGSQLDUMPALL -g > '$backupdir/globals.sql'"
+         globalscmd="$PGSQLDUMPALL -w -g > '$backupdir/globals.sql'"
       fi
-      if [ $usevserver = yes ]; then
+      if [ -n "${PGHOST}" ]; then
+         execstr=$globalscmd
+      elif [ $usevserver = yes ]; then
          execstr="$VSERVER $vsname exec su - $PGSQLUSER -s /bin/bash -c \"$globalscmd\""
       else
          execstr="su - $PGSQLUSER -s /bin/bash -c \"$globalscmd\""
@@ -184,11 +219,13 @@ else
       dumpcmd=""
       globalscmd=""
       if [ "$compress" == "yes" ]; then
-         dumpcmd="set -o pipefail ; $PGSQLDUMP --format=$format ${disablecustomcompress} $db | $GZIP $GZIP_OPTS > '$backupdir/${db}.${dumpext}.gz'"
+         dumpcmd="set -o pipefail ; $PGSQLDUMP -w --format=$format ${disablecustomcompress} $db | $GZIP $GZIP_OPTS > '$backupdir/${db}.${dumpext}.gz'"
       else
-         dumpcmd="$PGSQLDUMP --format=$format ${disablecustomcompress} $db > '$backupdir/${db}.${dumpext}'"
+         dumpcmd="$PGSQLDUMP -w --format=$format ${disablecustomcompress} $db > '$backupdir/${db}.${dumpext}'"
       fi
-      if [ $usevserver = yes ]; then
+      if [ -n "${PGHOST}" ]; then
+         execstr=$dumpcmd
+      elif [ $usevserver = yes ]; then
          execstr="$VSERVER $vsname exec su - $PGSQLUSER -s /bin/bash -c \"$dumpcmd\""
       else
          execstr="su - $PGSQLUSER -s /bin/bash -c \"$dumpcmd\""
@@ -206,6 +243,10 @@ else
          fi
       fi
    done
+fi
+
+if [ -n "${PGPASSFILE}" ]; then
+  rm -f $PGPASSFILE
 fi
 
 return 0
