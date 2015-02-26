@@ -73,7 +73,7 @@ backupninja:
 /usr/share/backupninja/mongodb.helper:
   file:
     - managed
-    - source: salt://backupninja/files/mongodb
+    - source: salt://backupninja/files/mongodb.helper
     - user: root
     - group: root
     - mode: 644
