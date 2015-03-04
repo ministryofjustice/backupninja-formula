@@ -110,7 +110,7 @@ To see available backup sets (hourly, in this instance), do::
 
 Most importantly, to recover a backup set::
 
-    $ sudo duplicity_daily_helper recover {target_dir}
+    $ sudo duplicity_daily_helper restore {target_dir}
 
 It is usually best to recover to a temp directory and then rsync
 files into place. Running without sudo is possible, but duplicity will error about
@@ -121,7 +121,7 @@ advisable to always use sudo for recovery.
 Recovery of a particular point in time is possible by specifying the --time
 option::
 
-    $ sudo duplicity_daily_helper recover --time 6d {target_dir}
+    $ sudo duplicity_daily_helper restore --time 6d {target_dir}
 
 The example above will recover from the backup set taken 6 days ago. See
 duplicity(1) for more information on the time formats it accepts.
