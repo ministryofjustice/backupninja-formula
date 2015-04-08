@@ -1,3 +1,7 @@
+## Unreleased
+
+* Customize pgsql backup script to be able backup a remote DB server
+
 0.3.1
 -----
 
