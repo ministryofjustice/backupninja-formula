@@ -158,7 +158,6 @@ bandwidthlimit =
 desturl = {{backupninja.duplicity.override_desturl}}
 
 {% else %}
-desturl = s3+http://{{backupninja.duplicity.s3bucket}}/{{ salt['pillar.get']('environment', 'unset_environment') }}/{{ salt['grains.get']('fqdn') }}/daily
+desturl = s3://s3-eu-central-1.amazonaws.com/{{backupninja.duplicity.s3bucket}}/{{ salt['pillar.get']('environment', 'unset_environment') }}/{{ salt['grains.get']('fqdn') }}/daily
 
 {% endif %}
-

@@ -5,7 +5,7 @@
 
 getconf tar /bin/tar
 getconf mongodump /usr/bin/mongodump
-getconf backupdir /var/backups/mongodb
+getconf backupdir /data/mongodbackup/
 getconf dbhost localhost
 getconf mongouser
 getconf mongopass

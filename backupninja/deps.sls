@@ -1,3 +1,15 @@
+backupninja_repo_deps:
+  pkgrepo.managed:
+    - humanname: Duplicity PPA
+    - name: deb http://ppa.launchpad.net/duplicity-team/ppa/ubuntu trusty main
+    - dist: trusty
+    - file: /etc/apt/sources.list.d/duplicity.list
+    - keyid: 7A86F4A2
+    - keyserver: keyserver.ubuntu.com
+    - require_in:
+      - pkg: backupninja_deps
+
+
 backupninja_deps:
   pkg.installed:
     - pkgs:
