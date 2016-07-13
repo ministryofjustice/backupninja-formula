@@ -1,6 +1,7 @@
 {% set backupninja = salt['grains.filter_by']({
     'Debian': {
         'backup_base_dir': '/var/backups',
+        'disable_default_backup_states': False,
         'duplicity': {
           'enabled': True,
           'keep': '60',

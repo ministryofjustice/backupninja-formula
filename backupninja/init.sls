@@ -90,7 +90,13 @@ backupninja:
     - require:
       - pkg: backupninja
 
+# Because of the require_in we can't turn off this state via
+# exclude, so adding a pillar to turn it off
 /etc/backup.d/10.sys:
+{% if backupninja.disable_default_backup_states %}
+  file:
+    - absent
+{% else %}
   file:
     - managed
     - source: salt://backupninja/templates/backup.d/10.sys
@@ -101,6 +107,7 @@ backupninja:
     - makedirs: True
     - require_in:
       - file: /etc/backup.d
+{% endif %}
 
 {% if backupninja.duplicity.hourly.enabled %}
 /etc/backup.d/80.dup:
@@ -118,6 +125,10 @@ backupninja:
 
 {% if backupninja.duplicity.enabled %}
 /etc/backup.d/90.dup:
+{% if backupninja.disable_default_backup_states %}
+  file:
+    - absent
+{% else %}
   file:
     - managed
     - source: salt://backupninja/templates/backup.d/90.dup
@@ -128,6 +139,7 @@ backupninja:
     - makedirs: True
     - require_in:
       - file: /etc/backup.d
+{% endif %}
 {% endif %}
 
 
@@ -199,8 +211,13 @@ backupninja:
       - pkg: backupninja
 
 {{backupninja.backup_base_dir}}/sys:
+{% if backupninja.disable_default_backup_states %}
+  file:
+    - absent
+{% else %}
   file:
     - directory
     - user: root
     - group: root
     - mode: 0750
+{% endif %}
