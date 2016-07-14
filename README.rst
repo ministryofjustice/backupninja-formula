@@ -53,6 +53,11 @@ The following pillars *must* be provided::
     backupninja.duplicity.awsaccesskeyid        # aws credentials
     backupninja.duplicity.awssecretaccesskeyid
 
+If you don't like the default backup behaviour, and want to customise it fully,
+you can set the following pillar to False, to disable the 10.sys and 90.dup states::
+
+    backupninja.disable_default_backup_states: True
+
 To enable the hourly backup set, you must set::
 
     backupninja.duplicity.hourly.enabled: True
