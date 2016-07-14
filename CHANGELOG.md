@@ -1,3 +1,7 @@
+## Unreleased
+
+* Allow to disable the default backup states (10.sys and 90.dup) via pillar
+
 ## Version 0.4.0
 
 * Customize pgsql backup script to be able backup a remote DB server
