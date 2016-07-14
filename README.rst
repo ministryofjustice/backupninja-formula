@@ -132,3 +132,18 @@ The example above will recover from the backup set taken 6 days ago. See
 duplicity(1) for more information on the time formats it accepts.
 
 
+backupninja and IAM policies
+---------
+
+Backupninja and its duplicity tend to require AWS keys, but this formula will
+attempt to relax this requirement via introducing a new handler called dup-iam.
+This should be used in the same fashion as the dup handler, and will no longer
+error out if no AWS keys are specified, and will no longer export the AWS env
+vars and thus will no longer misdirect boto. An indication that this might be
+happening is the error message from duplicity eg::
+
+    # duplicity_daily_helper files
+    BackendException: No connection to backend
+
+Note that you can still use duplicity_daily_helper with dup-iam.
+
