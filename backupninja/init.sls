@@ -221,3 +221,24 @@ backupninja:
     - group: root
     - mode: 0750
 {% endif %}
+
+# Add iam friendly duplicity files
+/usr/share/backupninja/dup-iam:
+  file:
+    - managed
+    - source: salt://backupninja/files/dup-iam
+    - user: root
+    - group: root
+    - mode: 644
+    - require:
+      - pkg: backupninja
+
+/usr/share/backupninja/dup-iam.helper:
+  file:
+    - managed
+    - source: salt://backupninja/files/dup-iam.helper
+    - user: root
+    - group: root
+    - mode: 644
+    - require:
+      - pkg: backupninja

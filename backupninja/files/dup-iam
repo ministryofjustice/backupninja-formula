@@ -46,9 +46,10 @@ destdir=${destdir%/}
 [ -n "$desturl" -o -n "$destdir" ]  || fatal "The destination directory (destdir) must be set when desturl is not used."
 [ -n "$include" -o -n "$vsinclude" ]  || fatal "No source includes specified"
 [ -n "$password" ] || fatal "The password option must be set."
-if [ "`echo $desturl | /usr/bin/awk -F ':' '{print $1}'`" == "s3+http" ]; then
-   [ -n "$awsaccesskeyid" -a -n "$awssecretaccesskey" ]  || fatal "AWS access keys must be set for S3 backups."
-fi
+# Ditch this 
+# if [ "`echo $desturl | /usr/bin/awk -F ':' '{print $1}'`" == "s3+http" ]; then
+#    [ -n "$awsaccesskeyid" -a -n "$awssecretaccesskey" ]  || fatal "AWS access keys must be set for S3 backups."
+# fi
 if [ "`echo $desturl | /usr/bin/awk -F ':' '{print $1}'`" == "cf+http" ]; then
    [ -n "$cfusername" -a -n "$cfapikey" ]  || fatal "Cloudfiles access keys must be set for S3 backups."
 fi
@@ -248,9 +249,9 @@ set +o noglob
 execstr_source=${execstr_source//\\*/\\\\\\*}
 
 ### If desturl is an S3 URL export the AWS environment variables
-if [ "`echo $desturl | /usr/bin/awk -F ':' '{print $1}'`" == "s3+http" ]; then
-   export AWS_ACCESS_KEY_ID="$awsaccesskeyid"
-   export AWS_SECRET_ACCESS_KEY="$awssecretaccesskey"
+if [ ! -z "${awsaccesskeyid}" ] && [ "`echo $desturl | /usr/bin/awk -F ':' '{print $1}'`" == "s3+http" ]; then
+   export AWS_ACCESS_KEY_ID="${awsaccesskeyid:-}"
+   export AWS_SECRET_ACCESS_KEY="${awssecretaccesskey:-}"
 fi
 
 ### If desturl is a RackSpace's CloudFiles URL export the relevant
@@ -355,3 +356,4 @@ if [ ! $test ]; then
 fi
 
 return 0
+
