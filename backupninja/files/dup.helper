@@ -1,0 +1,596 @@
+# -*- mode: sh; sh-basic-offset: 3; indent-tabs-mode: nil; -*-
+# vim: set filetype=sh sw=3 sts=3 expandtab autoindent:
+
+HELPERS="$HELPERS dup:incremental_encrypted_remote_filesystem_backup"
+
+### Functions
+
+do_dup_host_includes() {
+   set -o noglob
+   # choose the files to backup
+   REPLY=
+   while [ -z "$REPLY" ]; do
+      formBegin "$dup_title - host system: includes"
+         [ -z "$dup_includes" ] && dup_includes="$dup_default_includes"
+         for i in $dup_includes; do
+            formItem include "$i"
+         done
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formDisplay
+      [ $? = 0 ] || return 1
+      dup_includes="$REPLY"
+   done
+   set +o noglob
+}
+
+do_dup_vserver() {
+   # choose the vservers to backup (into $selected_vservers)
+   choose_one_or_more_vservers "$dup_title"
+   [ $? = 0 ] || return 1
+
+   set -o noglob
+   # choose the files to backup
+   REPLY=
+   while [ -z "$REPLY" ]; do
+      formBegin "$dup_title - vservers: vsincludes (backup these directories from every selected vserver)"
+         [ -z "$dup_vsincludes" ] && dup_vsincludes="$dup_default_includes"
+         for i in $dup_vsincludes; do
+            formItem include "$i"
+         done
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+         formItem include ""
+      formDisplay
+      [ $? = 0 ] || return 1
+      dup_vsincludes="$REPLY"
+   done
+   set +o noglob
+}
+
+do_dup_excludes() {
+   set -o noglob
+   formBegin "$dup_title: excludes"
+     [ -z "$dup_excludes" ] && dup_excludes="$dup_default_excludes"
+     for i in $dup_excludes; do
+        formItem exclude "$i"
+     done
+     formItem exclude ""
+     formItem exclude ""
+     formItem exclude ""
+     formItem exclude ""
+     formItem exclude ""
+     formItem exclude ""
+     formItem exclude ""
+     formItem exclude ""
+   formDisplay
+   [ $? = 0 ] || return 1
+   dup_excludes="$REPLY"
+   set +o noglob
+}
+
+do_dup_src() {
+   choose_host_or_vservers_or_both "$dup_title"
+   [ $? = 0 ] || return 1
+   case $host_or_vservers in
+      'host')
+         do_dup_host_includes
+         [ $? = 0 ] || return 1
+         ;;
+      'vservers')
+         do_dup_vserver
+         [ $? = 0 ] || return 1
+         ;;
+      'both')
+         do_dup_host_includes
+         [ $? = 0 ] || return 1
+         do_dup_vserver
+         [ $? = 0 ] || return 1
+         ;;
+      *)
+         return 1
+         ;;
+   esac
+   do_dup_excludes
+   [ $? = 0 ] || return 1
+
+   _src_done="(DONE)"
+   setDefault dest
+}
+
+do_dup_dest() {
+
+   local replyconverted
+   local thereply
+
+   set -o noglob
+   REPLY=
+   while [ -z "$REPLY" -o -z "$dup_destdir" -o -z "$dup_desthost" -o -z "$dup_destuser" ]; do
+      formBegin "$dup_title - destination: first three items are compulsory"
+        formItem "desthost" "$dup_desthost"
+        formItem "destuser" "$dup_destuser"
+        formItem "destdir" "$dup_destdir"
+        formItem "keep" "$dup_keep"
+        formItem "incremental" "$dup_incremental"
+        formItem "increments" "$dup_increments"
+        formItem "keepincroffulls" "$dup_keepincroffulls"
+        formItem "bandwidthlimit" "$dup_bandwidth"
+        formItem "sshoptions" "$dup_sshoptions"
+      formDisplay
+      [ $? = 0 ] || return 1
+
+      IFS=$''
+      replyconverted=`echo $REPLY | tr '\n' :`
+      IFS=$':'
+      thereply=($replyconverted)
+      IFS=$' \t\n'
+
+      dup_desthost=${thereply[0]}
+      dup_destuser=${thereply[1]}
+      dup_destdir=${thereply[2]}
+      dup_keep=${thereply[3]}
+      dup_incremental=${thereply[4]}
+      dup_increments=${thereply[5]}
+      dup_keepincroffulls=${thereply[6]}
+      dup_bandwidth=${thereply[7]}
+      dup_sshoptions=${thereply[8]}
+
+   done
+   set +o noglob
+
+   _dest_done="(DONE)"
+   setDefault gpg
+}
+
+do_dup_gpg_encryptkey() {
+   REPLY=
+   while [ -z "$REPLY" -o -z "$dup_gpg_encryptkey" ]; do
+      inputBox "$dup_title - GnuPG" "Enter ID of the public GnuPG key to be used to encrypt the backups:" "$dup_gpg_encryptkey"
+      [ $? = 0 ] || return 1
+      dup_gpg_encryptkey="$REPLY"
+   done
+}
+
+do_dup_gpg_sign() {
+   # sign ?
+   booleanBox "$dup_title - GnuPG" "Sign the backups?" "$dup_gpg_sign"
+   if [ $? = 0 ]; then
+      dup_gpg_sign=yes
+   else
+      dup_gpg_sign=no
+   fi
+}
+
+do_dup_gpg_signkey() {
+   # one key pair ?
+   booleanBox "$dup_title - GnuPG" "Use the same GnuPG key pair for encryption and signing?" "$dup_gpg_onekeypair"
+   if [ $? = 0 ]; then
+      dup_gpg_onekeypair=yes
+   else
+      dup_gpg_onekeypair=no
+   fi
+
+   if [ "$dup_gpg_onekeypair" == "no" ]; then
+      # signkey ?
+      REPLY=
+      while [ -z "$REPLY" -o -z "$dup_gpg_signkey" ]; do
+         inputBox "$dup_title - GnuPG" "Enter the ID of the private GnuPG key to be used to sign the backups:" "$dup_gpg_signkey"
+         [ $? = 0 ] || return 1
+         dup_gpg_signkey="$REPLY"
+      done
+   fi
+}
+
+do_dup_gpg_passphrase() {
+   local question="Enter the passphrase needed to unlock the GnuPG key:"
+   REPLY=
+   while [ -z "$REPLY" -o -z "$dup_gpg_password" ]; do
+      passwordBox "$dup_title - GnuPG" "$question"
+      [ $? = 0 ] || return 1
+      dup_gpg_password="$REPLY"
+   done
+}
+
+do_dup_gpg() {
+
+   # symmetric or public key encryption ?
+   booleanBox "$dup_title - GnuPG" "Use public key encryption? Otherwise, symmetric encryption will be used, and data signing will be impossible." "$dup_gpg_asymmetric_encryption"
+   if [ $? = 0 ]; then
+      dup_gpg_asymmetric_encryption=yes
+   else
+      dup_gpg_asymmetric_encryption=no
+   fi
+
+   # when using public/private key pair encryption, ask for the keys to use
+   if [ "$dup_gpg_asymmetric_encryption" == yes ]; then
+      do_dup_gpg_encryptkey ; [ $? = 0 ] || return 1
+      do_dup_gpg_sign ; [ $? = 0 ] || return 1
+      if [ "$dup_gpg_sign" == yes ]; then
+         do_dup_gpg_signkey ; [ $? = 0 ] || return 1
+      fi
+   else
+      dup_gpg_sign=no
+   fi
+
+   # a passphrase is alway needed
+   do_dup_gpg_passphrase
+
+   _gpg_done="(DONE)"
+   setDefault adv
+   # TODO: replace the above line by the following when do_dup_conn is written
+   # setDefault conn
+}
+
+# TODO: share rdiff.helper code in some lib, and use it here
+do_dup_conn() {
+   _con_done="(DONE)"
+   setDefault adv
+}
+
+do_dup_misc_options() {
+
+   set -o noglob
+   local replyconverted
+   local thereply
+
+   formBegin "$dup_title - misc. options"
+     formItem "nicelevel" "$dup_nicelevel"
+     formItem "testconnect" "$dup_testconnect"
+     formItem "options" "$dup_options"
+   formDisplay
+   [ $? = 0 ] || return 1
+
+   IFS=$''
+   replyconverted=`echo $REPLY | tr '\n' :`
+   IFS=$':'
+   thereply=($replyconverted)
+   IFS=$' \t\n'
+
+   dup_nicelevel=${thereply[0]}
+   dup_testconnect=${thereply[1]}
+   dup_options=${thereply[2]}
+
+   set +o noglob
+}
+
+# (rdiff.helper compatible interface... there could be some sode to share, hmmm.)
+do_dup_adv() {
+   do_dup_misc_options
+   [ $? = 0 ] || return 1
+   _adv_done="(DONE)"
+   setDefault finish
+}
+
+do_dup_finish() {
+   get_next_filename $configdirectory/90.dup
+   cat > $next_filename <<EOF
+# passed directly to duplicity
+#options = --verbosity 8
+options = $dup_options
+
+# default is 0, but set to 19 if you want to lower the priority.
+nicelevel = $dup_nicelevel
+
+# default is yes. set to no to skip the test if the remote host is alive.
+# if 'desturl' is set below, 'testconnect' must be set to 'no' for now.
+testconnect = $dup_testconnect
+
+## temporary directory used by duplicity, set to some other location if your /tmp is small
+## default is either /tmp or /usr/tmp, depending on the system
+##
+## Default:
+# tmpdir = /tmp
+
+######################################################
+## gpg section
+## (how to encrypt and optionally sign the backups)
+##
+## WARNING: old (pre-0.9.4) example.dup used to give wrong information about
+##          the way the following options are used. Please read the following
+##          carefully.
+##
+## If the encryptkey variable is set:
+##   - data is encrypted with the GnuPG public key specified by the encryptkey
+##     variable
+##   - if signing is enabled, data is signed with the GnuPG private
+##     key specified by the signkey variable
+##   - the password variable is used to unlock the GnuPG key(s) used
+##     for encryption and (optionnal) signing
+##
+## If the encryptkey option is not set:
+##   - data signing is not possible
+##   - the password variable is used to encrypt the data with symmetric
+##     encryption: no GnuPG key pair is needed
+
+[gpg]
+
+# when set to yes, encryptkey variable must be set below; if you want to use
+# two different keys for encryption and signing, you must also set the signkey
+# variable below.
+# default is no, for backwards compatibility with backupninja <= 0.5.
+sign = $dup_gpg_sign
+
+# ID of the GnuPG public key used for data encryption.
+# if not set, symmetric encryption is used, and data signing is not possible.
+encryptkey = $dup_gpg_encryptkey
+
+# ID of the GnuPG private key used for data signing.
+# if not set, encryptkey will be used.
+signkey = $dup_gpg_signkey
+
+# password
+# NB: neither quote this, nor should it include any quotes
+password = $dup_gpg_password
+
+######################################################
+## source section
+## (where the files to be backed up are coming from)
+
+[source]
+
+# A few notes about includes and excludes:
+# 1. include, exclude and vsinclude statements support globbing with '*'
+# 2. Symlinks are not dereferenced. Moreover, an include line whose path
+#    contains, at any level, a symlink to a directory, will only have the
+#    symlink backed-up, not the target directory's content. Yes, you have to
+#    dereference yourself the symlinks, or to use 'mount --bind' instead.
+#    Example: let's say /home is a symlink to /mnt/crypt/home ; the following
+#    line will only backup a "/home" symlink ; neither /home/user nor
+#    /home/user/Mail will be backed-up :
+#      include = /home/user/Mail
+#    A workaround is to 'mount --bind /mnt/crypt/home /home' ; another one is to
+#    write :
+#      include = /mnt/crypt/home/user/Mail
+# 3. All the excludes come after all the includes. The order is not otherwise
+#    taken into account.
+
+# files to include in the backup
+EOF
+
+   if [ "$host_or_vservers" == host -o "$host_or_vservers" == both ]; then
+      set -o noglob
+      for i in $dup_includes; do
+         echo "include = $i" >> $next_filename
+      done
+      set +o noglob
+   fi
+
+   cat >> $next_filename <<EOF
+
+# If vservers = yes in /etc/backupninja.conf then the following variables can
+# be used:
+# vsnames = all | <vserver1> <vserver2> ... (default = all)
+# vsinclude = <path>
+# vsinclude = <path>
+# ...
+# Any path specified in vsinclude is added to the include list for each vserver
+# listed in vsnames (or all if vsnames = all, which is the default).
+#
+# For example, vsinclude = /home will backup the /home directory in every
+# vserver listed in vsnames. If you have 'vsnames = foo bar baz', this
+# vsinclude will add to the include list /vservers/foo/home, /vservers/bar/home
+# and /vservers/baz/home.
+# Vservers paths are derived from $VROOTDIR.
+
+EOF
+
+   if [ "$host_or_vservers" == vservers -o "$host_or_vservers" == both ]; then
+      set -o noglob
+      echo -e "vsnames = $selected_vservers\n" >> $next_filename
+      for i in $dup_vsincludes; do
+         echo "vsinclude = $i" >> $next_filename
+      done
+      set +o noglob
+   fi
+
+   # excludes
+   cat >> $next_filename <<EOF
+
+# files to exclude from the backup
+EOF
+    set -o noglob
+    for i in $dup_excludes; do
+        echo "exclude = $i" >> $next_filename
+    done
+    set +o noglob
+
+    cat >> $next_filename <<EOF
+
+######################################################
+## destination section
+## (where the files are copied to)
+
+[dest]
+
+# perform an incremental backup? (default = yes)
+# if incremental = no, perform a full backup in order to start a new backup set
+incremental = $dup_incremental
+
+# how many days of incremental backups before doing a full backup again ;
+# default is 30 days (one can also use the time format of duplicity).
+# if increments = keep, never automatically perform a new full backup ;
+# only perform incremental backups.
+#increments = 30
+#increments = keep
+increments = $dup_increments
+
+# how many days of data to keep ; default is 60 days.
+# (you can also use the time format of duplicity)
+# 'keep = yes' means : do not delete old data, the remote host will take care of this
+#keep = 60
+#keep = 1Y
+#keep = yes
+keep = $dup_keep
+
+# for how many full backups do we keep their later increments ;
+# default is all (keep all increments).
+# increments for older full backups will be deleted : only the more
+# recent ones (count provided) will be kept
+#keepincroffulls = all
+#keepincroffulls = 6
+keepincroffulls = $dup_keepincroffulls
+
+# full destination URL, in duplicity format; if set, desturl overrides
+# sshoptions, destdir, desthost and destuser; it also disables testconnect and
+# bandwithlimit. For details, see duplicity manpage, section "URL FORMAT".
+#desturl = file:///usr/local/backup
+#desturl = rsync://user@other.host//var/backup/bla
+#desturl = s3+http://your_bucket
+#desturl = ftp://myftpuser@ftp.example.org/remote/ftp/path
+
+# Amazon Web Services Access Key ID and Secret Access Key, needed for backups
+# to S3 buckets.
+#awsaccesskeyid = YOUR_AWS_ACCESS_KEY_ID
+#awssecretaccesskey = YOUR_AWS_SECRET_KEY
+
+## RackSpace's CloudFiles username, API key, and authentication URL.
+## cfusername = YOUR_CF_USERNAME
+## cfapikey = YOUR_CF_API_KEY
+## cfauthurl = YOUR_CF_AUTH_URL
+##
+## Default:
+# cfusername =
+# cfapikey =
+# cfauthurl =
+
+# FTP password, needed for backups using desturl = ftp://...
+#ftp_password =
+
+# bandwith limit, in kbit/s ; default is 0, i.e. no limit
+# if using 'desturl' above, 'bandwidthlimit' must not be set
+# an example setting of 128 Kbit/s would be:
+#bandwidthlimit = 128
+bandwidthlimit = $dup_bandwidth
+
+## duplicity < 0.6.17
+## ------------------
+## passed directly to ssh, scp (and sftp in duplicity >=0.4.2)
+## warning: sftp does not support all scp options, especially -i; as
+## a workaround, you can use "-o <SSHOPTION>"
+## an example setting would be:
+## sshoptions = -o IdentityFile=/root/.ssh/id_rsa_duplicity
+##
+## duplicity >= 0.6.17
+## ------------------
+## supports only "-o IdentityFile=..."
+##
+## Default:
+# sshoptions =
+
+# put the backups under this destination directory
+# if using 'desturl' above, this must not be set
+# in all other cases, this must be set!
+destdir = $dup_destdir
+
+# the machine which will receive the backups
+# if using 'desturl' above, this must not be set
+# in all other cases, this must be set!
+desthost = $dup_desthost
+
+# make the files owned by this user
+# if using 'desturl' above, this must not be set
+# note: if using an SSH based transport and 'type' is set to 'remote', you must
+#       be able to 'ssh backupuser@backuphost' without specifying a password.
+destuser = $dup_destuser
+
+EOF
+
+    chmod 600 $next_filename
+
+}
+
+dup_main_menu() {
+
+   while true; do
+      srcitem="choose files to include & exclude $_src_done"
+      destitem="configure backup destination $_dest_done"
+      gpgitem="configure GnuPG encryption/signing $_gpg_done"
+      conitem="set up ssh keys and test remote connection $_con_done"
+      advitem="edit advanced settings $_adv_done"
+      # TODO: add the following to the menu when do_dup_conn is written
+      # conn "$conitem" \
+      menuBox "$dup_title" "choose a step:" \
+         src "$srcitem" \
+         dest "$destitem" \
+         gpg "$gpgitem" \
+         adv "$advitem" \
+         finish "finish and create config file"
+      [ $? = 0 ] || return 1
+      result="$REPLY"
+
+      case "$result" in
+         "src") do_dup_src;;
+         "dest") do_dup_dest;;
+         "gpg") do_dup_gpg;;
+         # TODO: enable the following when do_dup_conn is written
+         # "conn") do_dup_conn;;
+         "adv") do_dup_adv;;
+         "finish")
+            if [[ "$_dest_done$_gpg_done$_src_done" != "(DONE)(DONE)(DONE)" ]]; then
+            # TODO: replace the previous test by the following when do_dup_conn is written
+            # if [[ "$_con_done$_dest_done$_gpg_done$_src_done" != "(DONE)(DONE)(DONE)(DONE)" ]]; then
+               msgBox "$dup_title" "You cannot create the configuration file until the four first steps are completed."
+            else
+               do_dup_finish
+               break
+            fi
+            ;;
+      esac
+
+   done
+}
+
+### Main function
+
+dup_wizard() {
+
+   require_packages duplicity
+
+   # Global variables
+   dup_title="Duplicity action wizard"
+   _src_done=
+   _dest_done=
+   _con_done=
+   _gpg_done=
+   _adv_done=
+   dup_includes=
+   dup_excludes=
+   dup_vsincludes=
+   dup_incremental=yes
+   dup_increments=30
+   dup_keep=60
+   dup_keepincroffulls=
+   dup_bandwidth=
+   dup_sshoptions=
+   dup_destdir="/backups/`hostname`"
+   dup_desthost=
+   dup_destuser=
+   dup_gpg_asymmetric_encryption="yes"
+   dup_gpg_encryptkey=""
+   dup_gpg_sign="yes"
+   dup_gpg_onekeypair="yes"
+   dup_gpg_signkey=""
+   dup_gpg_password=""
+   dup_nicelevel=19
+   dup_testconnect=yes
+   dup_options=
+
+   # Global variables whose '*' shall not be expanded
+   set -o noglob
+   dup_default_includes="/var/spool/cron/crontabs /var/backups /etc /root /home /usr/local/*bin /var/lib/dpkg/status*"
+   dup_default_excludes="/home/*/.gnupg /home/*/.local/share/Trash /home/*/.Trash /home/*/.thumbnails /home/*/.beagle /home/*/.aMule /home/*/gtk-gnutella-downloads /var/cache/backupninja/duplicity"
+   set +o noglob
+
+   dup_main_menu
+}
