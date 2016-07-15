@@ -1,6 +1,7 @@
 ## Unreleased
 
 * Allow to disable the default backup states (10.sys and 90.dup) via pillar
+* Make formula more IAM friendly
 
 ## Version 0.4.0
 
