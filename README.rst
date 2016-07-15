@@ -54,7 +54,7 @@ The following pillars *must* be provided::
     backupninja.duplicity.awssecretaccesskeyid
 
 If you don't like the default backup behaviour, and want to customise it fully,
-you can set the following pillar to False, to disable the 10.sys and 90.dup states::
+you can set the following pillar to True, to disable the 10.sys and 90.dup states::
 
     backupninja.disable_default_backup_states: True
 
